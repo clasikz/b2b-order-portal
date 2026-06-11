@@ -1,18 +1,21 @@
 # Testing & QA
 
-How the portal is verified: a layer of **automated unit tests** over the pure business logic,
-plus a set of **manual QA scenarios** for the end-to-end workflow.
+The portal is verified at three levels: **unit tests** over the pure business logic,
+**end-to-end tests** (Playwright) that drive the real app through the key journeys, and a set
+of **manual QA scenarios** for anything not yet automated.
 
 ## Strategy
 
 The business rules live in **pure, framework-free functions** (validation, RBAC, the lock
 state machine, the ERP queue logic, pricing). That makes them cheap and reliable to unit-test,
-and the same functions run in the UI and on the server, so behaviour can't drift. UI and
-integration flows are then checked manually against the scenarios below.
+and the same functions run in the UI and on the server, so behaviour can't drift. The
+end-to-end suite then proves the screens, uploads, role handoffs, and notifications actually
+work together.
 
 ```bash
-npm run test        # watch mode
-npm run test:run    # single run (CI)
+npm run test        # unit tests, watch mode
+npm run test:run    # unit tests, single run (CI)
+npm run test:e2e    # end-to-end tests (Playwright)
 ```
 
 ## Automated test coverage — 53 tests / 10 files
@@ -29,6 +32,25 @@ npm run test:run    # single run (CI)
 | ERP adapter | `lib/erp/adapter.test.ts` | 2 | status mapping + sales-order payload build |
 | Clean-CSV normalizer | `lib/roster/normalizer.test.ts` | 2 | parse + map to canonical rows; manual override |
 | Xero invoice | `lib/xero/invoice.test.ts` | 2 | discount × GST × deposit maths |
+
+## End-to-end tests (Playwright)
+
+`npm run test:e2e` drives the real app (and Supabase) through the headline journeys in a real
+browser. It uses the **Page Object Model**: page objects under `e2e/pages/` (`BasePage`,
+`RosterUploadPage`, `OrderPage`) hold the selectors, and `e2e/fixtures.ts` injects them plus
+`login()` / `createOrder()` flows, so the specs read like the workflow.
+
+| Test | Covers |
+|------|--------|
+| TC-01–05 | Auth & RBAC: redirect when signed out; each role lands on the right page with only its own nav |
+| TC-06 | Valid roster validates → submit creates a Draft order |
+| TC-07 | Invalid roster shows the errors and disables submit |
+| TC-08 | Full lifecycle: submit → designer uploads a proof → client approves & locks |
+| TC-09 | Submitting an order lands a notification on the designer's bell |
+
+Isolation: a dedicated `e2e_club` is created in global setup and its orders are deleted in
+teardown, so test runs never touch the demo data. Auth uses a **dev-only** `/api/dev-login`
+route (returns 404 in production).
 
 ## Manual QA scenarios
 
@@ -69,7 +91,9 @@ Run as a functional pass before submitting. Sample CSVs are in this folder.
 
 ## Notes
 
-- A throwaway `GET /api/dev-login` route (dev-only, 404 in prod) lets headless tools reach
+- A `GET /api/dev-login` route (dev-only, 404 in production) lets the E2E tests reach
   authenticated pages without the login form.
-- Tests run on the pure logic without a database; the manual scenarios exercise the real
-  Supabase-backed flow.
+- **Unit tests** run on the pure logic with no database; the **E2E suite** and the manual
+  scenarios exercise the real Supabase-backed flow. Several manual scenarios above (TC-08-style
+  lock flow, role nav, validation) are now automated in the Playwright suite; the rest remain a
+  manual pass.

@@ -74,7 +74,8 @@ and 30-row files).
 ### Scripts
 
 - `npm run dev` — dev server
-- `npm run test` / `npm run test:run` — unit tests
+- `npm run test` / `npm run test:run` — unit tests (Vitest)
+- `npm run test:e2e` — end-to-end tests (Playwright)
 - `npm run db:push` / `npm run db:seed` — schema + seed data
 
 ## Documentation

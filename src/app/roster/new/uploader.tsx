@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { RosterRowsEditor } from "@/components/RosterRowsEditor";
 import { Spinner } from "@/components/Spinner";
 import type { Catalog, RosterRow } from "@/lib/roster/types";
@@ -28,6 +28,8 @@ export function RosterUploader() {
   const [mapping, setMapping] = useState<Record<string, string>>({});
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [dragging, setDragging] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   // Bumped on every upload/remap so the editor remounts with fresh rows even when a new file
   // happens to have the same column mapping as the previous one.
   const [seq, setSeq] = useState(0);
@@ -58,22 +60,42 @@ export function RosterUploader() {
     }
   }
 
-  async function onFile(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0];
-    if (!file) return;
+  async function handleFile(file: File) {
     const text = await file.text();
     setFileName(file.name);
     setCsv(text);
     setMapping({});
     await validate(text, {});
+  }
+
+  async function onInputChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (file) await handleFile(file);
     // Allow re-selecting the same file name to re-trigger onChange.
     e.target.value = "";
+  }
+
+  function onDrop(e: React.DragEvent) {
+    e.preventDefault();
+    setDragging(false);
+    const file = e.dataTransfer.files?.[0];
+    if (file && /\.csv$/i.test(file.name)) void handleFile(file);
+    else if (file) setError("Please drop a .csv file.");
   }
 
   function onRemap(field: string, header: string) {
     const next = { ...mapping, [field]: header };
     setMapping(next);
     void validate(csv, next);
+  }
+
+  // Download via a detached anchor so the top loader (which only hooks in-DOM anchors) doesn't
+  // fire for a file download.
+  function downloadTemplate() {
+    const a = document.createElement("a");
+    a.href = "/roster-template.csv";
+    a.download = "roster-template.csv";
+    a.click();
   }
 
   // Strip server-side errors; the editor re-validates live as you edit.
@@ -90,17 +112,65 @@ export function RosterUploader() {
 
   return (
     <div className="flex flex-col gap-6">
-      <label className="flex w-fit cursor-pointer items-center gap-2 rounded-xl border border-dashed border-line bg-canvas px-4 py-3 text-sm transition hover:border-primary/40 hover:bg-primary-50">
-        <input type="file" accept=".csv,text/csv" className="hidden" onChange={onFile} />
-        <span className="font-semibold text-ink">Choose CSV file</span>
-        {fileName && <span className="text-muted">{fileName}</span>}
-      </label>
+      <div
+        onDragOver={(e) => {
+          e.preventDefault();
+          setDragging(true);
+        }}
+        onDragLeave={() => setDragging(false)}
+        onDrop={onDrop}
+        className={`flex flex-col items-center gap-3 rounded-2xl border-2 border-dashed px-6 py-6 text-center transition ${
+          dragging ? "border-primary bg-primary-50" : "border-line bg-canvas"
+        }`}
+      >
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept=".csv,text/csv"
+          className="hidden"
+          onChange={onInputChange}
+        />
 
-      <p className="text-xs text-gray-500">
-        Expected columns: Team Squad, Jersey Number, Name (optional), Size. Different column
-        names are auto-detected; map any unmatched columns below. You can edit cells directly
-        before submitting.
-      </p>
+        <button
+          type="button"
+          onClick={() => fileInputRef.current?.click()}
+          aria-label="Choose a CSV file"
+          className="flex h-11 w-11 items-center justify-center rounded-full bg-primary-50 text-primary-600 transition hover:scale-105 hover:bg-primary/15 active:scale-95"
+        >
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M4 16v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2" />
+            <path d="M12 15V4" />
+            <path d="m8 8 4-4 4 4" />
+          </svg>
+        </button>
+
+        <div>
+          <button
+            type="button"
+            onClick={() => fileInputRef.current?.click()}
+            className="font-semibold text-primary-600 underline-offset-2 transition hover:underline"
+          >
+            Choose a CSV file
+          </button>
+          <span className="text-ink"> or drag it here</span>
+        </div>
+
+        {fileName ? (
+          <p className="text-sm text-muted">{fileName}</p>
+        ) : (
+          <p className="text-xs text-muted">
+            Columns are auto-detected; you can edit rows before submitting.
+          </p>
+        )}
+
+        <button
+          type="button"
+          onClick={downloadTemplate}
+          className="text-xs font-bold text-muted underline-offset-2 transition-colors hover:text-ink hover:underline"
+        >
+          Download the CSV template
+        </button>
+      </div>
 
       {loading && (
         <p className="inline-flex items-center gap-2 text-sm text-muted">
