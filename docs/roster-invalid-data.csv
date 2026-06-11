@@ -1,0 +1,8 @@
+Team,Player Name,Player No,SKU,Size,Qty,Pack Group
+U12 Boys,A. Santos,7,STK-JER-NAVY-Y8,Y8,1,U12 Boys Box
+U12 Boys,Bad Product,9,NOT-A-REAL-SKU,Y8,1,U12 Boys Box
+U12 Boys,Dup Number,7,STK-JER-NAVY-Y8,Y8,1,U12 Boys Box
+U15 Girls,Wrong Size,14,EMB-POLO-BLK-ADULTM,XXXL,1,U15 Girls Box
+Senior Men,Missing Size,22,STK-JER-NAVY-ADULTM,,2,Senior Men Box
+Senior Men,Bad Qty,5,SOCK-WHT-ADULT,ADULT,zero,Senior Men Box
+Senior Men,No Product,8,,M,1,Senior Men Box

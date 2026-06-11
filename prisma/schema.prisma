@@ -1,0 +1,225 @@
+// B2B Order Intake & Approval Portal - data model
+// See PROJECT_PLAN.md (assessment data folder) for scope and state machine.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+enum Role {
+  CLUB_MANAGER
+  DESIGNER
+  WAREHOUSE
+  SUPER_ADMIN
+}
+
+enum DesignAssetKind {
+  CLIENT_REFERENCE
+  DESIGNER_PROOF
+}
+
+enum PricingTier {
+  GOLD
+  SILVER
+  BRONZE
+}
+
+// State machine: Draft -> Pending Approval -> Locked/Ready -> Packed (& invoiced)
+enum OrderStatus {
+  DRAFT
+  PENDING_APPROVAL
+  LOCKED_READY
+  PACKED
+}
+
+enum LockState {
+  UNLOCKED
+  REVISION_REQUESTED
+  LOCKED
+}
+
+enum AuditEventType {
+  ORDER_CREATED
+  ROSTER_VALIDATED
+  STATUS_CHANGED
+  REFERENCE_UPLOADED
+  PROOF_UPLOADED
+  REVISION_REQUESTED
+  DESIGN_LOCKED
+  ERP_ENQUEUED
+  ERP_SYNCED
+  ERP_FAILED
+  ORDER_PACKED
+  INVOICE_GENERATED
+}
+
+enum IntegrationStatus {
+  PENDING
+  PROCESSING
+  DONE
+  FAILED
+}
+
+model Club {
+  id              String   @id @default(cuid())
+  name            String
+  contactName     String?
+  pricingTier     PricingTier @default(BRONZE)
+  discountPct     Int      @default(0)
+  requiresDeposit Boolean  @default(false)
+  users           User[]
+  orders          Order[]
+  createdAt       DateTime @default(now())
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  name      String
+  role      Role
+  club      Club?    @relation(fields: [clubId], references: [id])
+  clubId    String?
+  orders    Order[]  @relation("OrderCreatedBy")
+  createdAt DateTime @default(now())
+}
+
+model Order {
+  id           String        @id @default(cuid())
+  club         Club          @relation(fields: [clubId], references: [id])
+  clubId       String
+  status       OrderStatus   @default(DRAFT)
+  totalQty     Int           @default(0)
+  createdBy    User          @relation("OrderCreatedBy", fields: [createdById], references: [id])
+  createdById  String
+  rosterEntries RosterEntry[]
+  designLock   DesignLock?
+  designAssets DesignAsset[]
+  designComments DesignComment[]
+  auditEvents  AuditEvent[]
+  notifications Notification[]
+  integrationJobs IntegrationJob[]
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+}
+
+model RosterEntry {
+  id           String  @id @default(cuid())
+  order        Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  orderId      String
+  teamSquad    String
+  jerseyNumber Int?    // nullable: coaches / non-players may have no number
+  playerName   String?
+  size         String
+  productSku   String?
+  quantity     Int     @default(1)
+  packGroup    String? // warehouse pick-list grouping (e.g. "U12 Boys Box")
+}
+
+model DesignLock {
+  id            String    @id @default(cuid())
+  order         Order     @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  orderId       String    @unique
+  state         LockState @default(UNLOCKED)
+  mockDesignUrl String?
+  lockedById    String?
+  lockedAt      DateTime?
+  revisionNote  String?
+  updatedAt     DateTime  @updatedAt
+}
+
+// Every uploaded image is kept for history: the client's optional reference, plus each
+// designer proof round. For the demo the image is stored inline as a data URL (storedRef);
+// production would put this in object storage and keep only a URL.
+model DesignAsset {
+  id            String          @id @default(cuid())
+  order         Order           @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  orderId       String
+  kind          DesignAssetKind
+  storedRef     String          // data URL (demo) or storage URL (prod)
+  uploaderEmail String
+  uploaderName  String
+  uploaderRole  Role
+  createdAt     DateTime        @default(now())
+}
+
+// Threaded designer <-> client feedback on a design, replacing the email back-and-forth.
+model DesignComment {
+  id         String   @id @default(cuid())
+  order      Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  orderId    String
+  authorEmail String
+  authorName  String
+  authorRole  Role
+  body       String
+  createdAt  DateTime @default(now())
+}
+
+model AuditEvent {
+  id         String         @id @default(cuid())
+  order      Order          @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  orderId    String
+  actor      String
+  eventType  AuditEventType
+  fromStatus OrderStatus?
+  toStatus   OrderStatus?
+  detail     Json?
+  createdAt  DateTime       @default(now())
+}
+
+// Durable queue for outbound ERP sync. A locked order enqueues one job (idempotency key =
+// ERP:orderId, unique - so retries never create a duplicate ERP order). A worker processes
+// jobs with retry/backoff; exhausting maxAttempts dead-letters the job as FAILED.
+model IntegrationJob {
+  id             String            @id @default(cuid())
+  order          Order             @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  orderId        String
+  target         String            @default("ERP")
+  status         IntegrationStatus @default(PENDING)
+  attempts       Int               @default(0)
+  maxAttempts    Int               @default(5)
+  lastError      String?
+  idempotencyKey String            @unique
+  nextRetryAt    DateTime?
+  payload        Json?
+  createdAt      DateTime          @default(now())
+  updatedAt      DateTime          @updatedAt
+}
+
+// Simple key/value flags (e.g. ERP maintenance mode for the demo).
+model SystemSetting {
+  key   String @id
+  value String
+}
+
+// In-app notification (replaces email, which is out of scope). Targeted at a specific user
+// (e.g. the order's club manager) or a whole role (e.g. all Warehouse staff).
+model Notification {
+  id              String   @id @default(cuid())
+  order           Order?   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  orderId         String?
+  recipientUserId String?
+  recipientRole   Role?
+  message         String
+  read            Boolean  @default(false)
+  createdAt       DateTime @default(now())
+
+  @@index([recipientUserId])
+  @@index([recipientRole])
+}
+
+// Product catalogue (seeded from product_catalog.csv). SKU encodes product + size; pricing
+// and validation read from here.
+model Product {
+  sku               String  @id
+  name              String
+  category          String
+  customizationType String
+  size              String
+  unitPrice         Float
+  active            Boolean @default(true)
+}
