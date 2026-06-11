@@ -44,6 +44,8 @@ export function DesignPanel({
   const [pending, run] = useLoaderTransition();
   const [revising, setRevising] = useState(false);
   const [revisionNote, setRevisionNote] = useState("");
+  const [approving, setApproving] = useState(false);
+  const [approvalNote, setApprovalNote] = useState("");
 
   const locked = lockState === "LOCKED";
   const inReview = status === "PENDING_APPROVAL";
@@ -56,13 +58,15 @@ export function DesignPanel({
       const res = await fetch("/api/design-lock", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ orderId, action: "lock" }),
+        body: JSON.stringify({ orderId, action: "lock", note: approvalNote || undefined }),
       });
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
         setError(data.error ?? "Action failed.");
         return;
       }
+      setApprovalNote("");
+      setApproving(false);
       router.refresh();
     });
   }
@@ -212,6 +216,44 @@ export function DesignPanel({
                 </button>
               </div>
             </div>
+          ) : approving ? (
+            <div className="flex flex-col gap-2">
+              <p className="text-sm font-medium text-ink">
+                Approve and lock this design?
+              </p>
+              <textarea
+                value={approvalNote}
+                onChange={(e) => setApprovalNote(e.target.value)}
+                rows={2}
+                autoFocus
+                placeholder="Add an approval note (optional)…"
+                className="w-full rounded-xl border border-line bg-canvas px-3 py-2 text-sm focus:border-primary/40 focus:outline-none"
+              />
+              <p className="text-xs text-muted">
+                Once locked the design can no longer be changed.
+              </p>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  disabled={pending}
+                  onClick={approveAndLock}
+                  className="rounded-xl bg-emerald-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-emerald-700 disabled:bg-slate-300"
+                >
+                  {pending ? <Pending label="Locking…" /> : "Confirm & lock"}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setApproving(false);
+                    setApprovalNote("");
+                    setError("");
+                  }}
+                  className="rounded-xl border border-line px-4 py-2 text-sm font-medium text-muted transition hover:bg-canvas"
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
           ) : (
             <div className="flex flex-wrap items-center gap-2">
               <button
@@ -226,7 +268,7 @@ export function DesignPanel({
                 type="button"
                 disabled={pending || !latestProof}
                 title={latestProof ? "" : "Wait for the designer to upload a proof"}
-                onClick={approveAndLock}
+                onClick={() => setApproving(true)}
                 className="rounded-xl bg-emerald-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-emerald-700 disabled:bg-slate-300"
               >
                 Approve &amp; Lock

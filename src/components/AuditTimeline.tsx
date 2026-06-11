@@ -12,6 +12,7 @@ const EVENT_LABEL: Record<AuditEventType, string> = {
   STATUS_CHANGED: "Status changed",
   REFERENCE_UPLOADED: "Client reference uploaded",
   PROOF_UPLOADED: "Design proof uploaded",
+  COMMENT_ADDED: "Comment added",
   REVISION_REQUESTED: "Revision requested",
   DESIGN_LOCKED: "Design approved & locked",
   ERP_ENQUEUED: "ERP sync queued",
@@ -32,7 +33,10 @@ function detailLine(event: AuditEvent): string | null {
   if (event.eventType === "PROOF_UPLOADED" && typeof detail?.version === "number") {
     return detail.note ? `v${detail.version} — “${detail.note}”` : `v${detail.version}`;
   }
-  if (event.eventType === "REVISION_REQUESTED" && detail?.note) {
+  if (
+    (event.eventType === "REVISION_REQUESTED" || event.eventType === "COMMENT_ADDED") &&
+    detail?.note
+  ) {
     return `“${detail.note}”`;
   }
   if (event.eventType === "ROSTER_VALIDATED") {

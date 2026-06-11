@@ -67,6 +67,20 @@ export async function applyDesignAction(
         detail: note ? { note } : undefined,
       },
     });
+
+    // An approval note travels to the conversation thread alongside the lock.
+    const trimmed = note?.trim();
+    if (trimmed) {
+      await tx.designComment.create({
+        data: {
+          orderId,
+          authorEmail: session.email,
+          authorName: session.name,
+          authorRole: session.role,
+          body: trimmed,
+        },
+      });
+    }
   });
 
   // On lock, enqueue the ERP sync (durable + idempotent). The order is safe even if the ERP

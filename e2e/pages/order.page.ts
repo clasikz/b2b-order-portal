@@ -22,6 +22,10 @@ export class OrderPage extends BasePage {
     return this.page.getByRole("button", { name: "Approve & Lock" });
   }
 
+  get confirmLockButton(): Locator {
+    return this.page.getByRole("button", { name: "Confirm & lock" });
+  }
+
   get fileInput(): Locator {
     return this.page.locator('input[type="file"]');
   }
@@ -46,6 +50,8 @@ export class OrderPage extends BasePage {
   async approveAndLock() {
     await expect(this.approveAndLockButton).toBeEnabled();
     await this.approveAndLockButton.click();
+    // Two-step: an optional approval note appears, then confirm.
+    await this.confirmLockButton.click();
     await expect(this.status("Locked")).toBeVisible();
   }
 }

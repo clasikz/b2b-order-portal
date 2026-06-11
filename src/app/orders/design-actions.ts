@@ -210,6 +210,9 @@ export async function postDesignComment(
   const locked = await assertNotLocked(orderId);
   if (locked) return locked;
 
+  const short = orderId.slice(0, 8);
+  const preview = text.length > 60 ? `${text.slice(0, 60)}…` : text;
+
   await prisma.designComment.create({
     data: {
       orderId,
@@ -220,10 +223,13 @@ export async function postDesignComment(
     },
   });
 
+  // Record a concise entry in the activity timeline (the full text stays in the thread).
+  await prisma.auditEvent.create({
+    data: { orderId, actor: session.email, eventType: "COMMENT_ADDED", detail: { note: preview } },
+  });
+
   // Notify the other side of the conversation: a designer's comment pings the client (this
   // order's manager); anyone else's pings the design studio.
-  const short = orderId.slice(0, 8);
-  const preview = text.length > 60 ? `${text.slice(0, 60)}…` : text;
   if (session.role === "DESIGNER") {
     const order = await prisma.order.findUnique({ where: { id: orderId } });
     if (order) {
