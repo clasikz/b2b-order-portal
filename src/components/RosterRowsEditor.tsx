@@ -127,7 +127,7 @@ export function RosterRowsEditor({
                     </div>
                   ))}
                   <div
-                    className="w-48 shrink-0 truncate px-3 text-xs text-red-600"
+                    className="w-48 shrink-0 px-3 text-xs text-red-600"
                     title={issueText}
                   >
                     {issueText}
