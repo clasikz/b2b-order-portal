@@ -1,5 +1,7 @@
 # B2B Order Intake & Approval Portal
 
+![CI](https://github.com/clasikz/b2b-order-portal/actions/workflows/ci.yml/badge.svg)
+
 A lightweight portal that replaces the Excel-and-email mess for a B2B sportswear brand:
 club managers upload a team roster, it's validated and priced, a designer and the client
 collaborate on the artwork, the client approves & **locks** it, and the order flows through
