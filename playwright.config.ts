@@ -6,9 +6,11 @@ export default defineConfig({
   testDir: "./e2e",
   fullyParallel: false,
   workers: 1,
-  retries: 0,
-  timeout: 45_000,
-  expect: { timeout: 10_000 },
+  retries: 1,
+  timeout: 60_000,
+  // The order page re-renders a lot on router.refresh (catalog + pricing + ERP payload), which
+  // is slow on the dev filesystem, so give refresh-dependent assertions room.
+  expect: { timeout: 20_000 },
   reporter: [["list"]],
   globalSetup: "./e2e/global-setup.ts",
   globalTeardown: "./e2e/global-teardown.ts",

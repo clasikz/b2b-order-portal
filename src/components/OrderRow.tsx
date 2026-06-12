@@ -5,9 +5,11 @@ import { useTopLoader } from "nextjs-toploader";
 import type { OrderStatus } from "@prisma/client";
 import { StatusBadge } from "./StatusBadge";
 import { DeleteDraftButton } from "./DeleteDraftButton";
+import { formatOrderNumber } from "@/lib/order-status";
 
 export function OrderRow({
   id,
+  orderNumber,
   clubName,
   players,
   totalQty,
@@ -16,6 +18,7 @@ export function OrderRow({
   showDeleteColumn,
 }: {
   id: string;
+  orderNumber: number;
   clubName: string;
   players: number;
   totalQty: number;
@@ -34,7 +37,9 @@ export function OrderRow({
       }}
       className="cursor-pointer border-b border-line/70 transition last:border-0 hover:bg-canvas"
     >
-      <td className="px-5 py-4 font-semibold text-primary-600">{id.slice(0, 8)}</td>
+      <td className="px-5 py-4 font-semibold text-primary-600">
+        {`#${formatOrderNumber(orderNumber)}`}
+      </td>
       <td className="px-5 py-4 font-medium text-ink">{clubName}</td>
       <td className="px-5 py-4 text-muted">{players}</td>
       <td className="px-5 py-4 text-muted">{totalQty}</td>

@@ -148,7 +148,7 @@ export function RosterUploader() {
           <button
             type="button"
             onClick={() => fileInputRef.current?.click()}
-            className="font-semibold text-primary-600 underline-offset-2 transition hover:underline"
+            className="font-semibold text-primary-600 transition hover:opacity-70"
           >
             Choose a CSV file
           </button>
@@ -166,7 +166,7 @@ export function RosterUploader() {
         <button
           type="button"
           onClick={downloadTemplate}
-          className="text-xs font-bold text-muted underline-offset-2 transition-colors hover:text-ink hover:underline"
+          className="text-xs font-bold text-muted transition-colors hover:text-ink"
         >
           Download the CSV template
         </button>

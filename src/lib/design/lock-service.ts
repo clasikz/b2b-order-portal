@@ -3,6 +3,7 @@ import { can } from "@/lib/rbac";
 import type { SessionUser } from "@/lib/auth";
 import { enqueueErpSync } from "@/lib/erp/queue";
 import { notify } from "@/lib/notifications";
+import { formatOrderNumber } from "@/lib/order-status";
 import { decideDesignAction, type DesignAction } from "./lock-rules";
 
 export class DesignActionError extends Error {
@@ -92,18 +93,18 @@ export async function applyDesignAction(
     });
     if (full) await enqueueErpSync(full, session.email);
 
-    const short = orderId.slice(0, 8);
+    const ref = `#${formatOrderNumber(order.orderNumber)}`;
     // Warehouse: the order is ready for production.
     await notify({
       orderId,
       recipientRole: "WAREHOUSE",
-      message: `Order ${short} is approved & locked — ready for production.`,
+      message: `Order ${ref} is approved & locked — ready for production.`,
     });
     // Designer: the client approved & locked the design.
     await notify({
       orderId,
       recipientRole: "DESIGNER",
-      message: `Your design for order ${short} was approved & locked by the client.`,
+      message: `Your design for order ${ref} was approved & locked by the client.`,
     });
   }
 

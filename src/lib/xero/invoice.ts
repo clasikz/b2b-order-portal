@@ -2,6 +2,8 @@
 // (product_catalog.csv) times the account's discount tier, with 10% GST and a 50% deposit
 // when the account requires one. No real Xero API is called.
 
+import { formatOrderNumber } from "@/lib/order-status";
+
 export const GST_RATE = 0.1;
 export const DEPOSIT_RATE = 0.5;
 
@@ -40,7 +42,7 @@ export interface XeroInvoice {
 }
 
 export interface InvoiceInput {
-  orderId: string;
+  orderNumber: number;
   accountCode: string;
   accountName: string;
   discountPct: number;
@@ -68,7 +70,7 @@ export function buildXeroInvoice(input: InvoiceInput): XeroInvoice {
   const deposit = input.requiresDeposit ? round2(total * DEPOSIT_RATE) : 0;
 
   return {
-    invoice_ref: `INV-B2B-${input.orderId.slice(0, 8).toUpperCase()}`,
+    invoice_ref: `INV-${formatOrderNumber(input.orderNumber)}`,
     account_code: input.accountCode,
     account_name: input.accountName,
     status: "DRAFT",

@@ -60,7 +60,7 @@ export function CommentThread({
         <button
           type="button"
           onClick={() => setShowAll(true)}
-          className="self-start text-xs font-medium text-primary-600 hover:underline"
+          className="self-start text-xs font-medium text-primary-600 transition hover:opacity-70"
         >
           Show {hidden} older comment{hidden === 1 ? "" : "s"}
         </button>

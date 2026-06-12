@@ -8,17 +8,18 @@ import { ActionButton } from "@/components/ActionButton";
 import { AppShell } from "@/components/AppShell";
 import { DesignPanel } from "@/components/DesignPanel";
 import { DeleteDraftButton } from "@/components/DeleteDraftButton";
-import { RosterRowsEditor } from "@/components/RosterRowsEditor";
+import { DraftRosterEditor } from "@/components/DraftRosterEditor";
 import { AuditTimeline } from "@/components/AuditTimeline";
 import { PickList } from "@/components/PickList";
 import { RosterTable } from "@/components/RosterTable";
 import type { RosterRow } from "@/lib/roster/types";
 import { buildErpPayload, toErpStatus } from "@/lib/erp/adapter";
+import { formatOrderNumber } from "@/lib/order-status";
 import { loadCatalog } from "@/lib/catalog";
 import { canViewOrder } from "@/lib/orders/queries";
 import { buildXeroInvoice, type PricedLine } from "@/lib/xero/invoice";
 import { InvoicePanel } from "@/components/InvoicePanel";
-import { submitForApproval, updateRosterDraft, markPacked } from "../actions";
+import { submitForApproval, markPacked } from "../actions";
 
 export default async function OrderDetailPage({
   params,
@@ -67,7 +68,7 @@ export default async function OrderDetailPage({
   const invoice =
     pricedLines.length > 0
       ? buildXeroInvoice({
-          orderId: order.id,
+          orderNumber: order.orderNumber,
           accountCode: order.club.id,
           accountName: order.club.name,
           discountPct: order.club.discountPct,
@@ -103,7 +104,7 @@ export default async function OrderDetailPage({
   }));
 
   return (
-    <AppShell title={`Order ${order.id.slice(0, 8)}`} user={session}>
+    <AppShell title={`Order #${formatOrderNumber(order.orderNumber)}`} user={session}>
       <div className="mx-auto flex max-w-4xl flex-col gap-5">
         <div className="flex items-center justify-between">
           <div>
@@ -155,21 +156,17 @@ export default async function OrderDetailPage({
         />
 
         <section className="rounded-2xl border border-line bg-surface p-5 shadow-sm">
-          <h2 className="mb-3 text-sm font-semibold text-ink">
-            Roster{" "}
-            {canEditRoster && (
-              <span className="font-normal text-muted">(editable while draft)</span>
-            )}
-          </h2>
           {canEditRoster ? (
-            <RosterRowsEditor
+            <DraftRosterEditor
+              orderId={order.id}
               initialRows={rosterRows}
               catalog={catalog}
-              onSubmit={updateRosterDraft.bind(null, order.id)}
-              submitLabel="Save changes"
             />
           ) : (
-            <RosterTable entries={order.rosterEntries} />
+            <>
+              <h2 className="mb-3 text-sm font-semibold text-ink">Roster</h2>
+              <RosterTable entries={order.rosterEntries} />
+            </>
           )}
         </section>
 

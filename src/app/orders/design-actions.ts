@@ -6,6 +6,7 @@ import { requireSession, AuthError } from "@/lib/auth";
 import { can } from "@/lib/rbac";
 import { saveImage, MAX_IMAGE_BYTES } from "@/lib/storage";
 import { notify } from "@/lib/notifications";
+import { formatOrderNumber } from "@/lib/order-status";
 
 export type DesignResult = { error: string } | { ok: true };
 
@@ -91,7 +92,7 @@ async function uploadAsset(
       await notify({
         orderId,
         recipientUserId: order.createdById,
-        message: `Design v${version} is ready to review on order ${orderId.slice(0, 8)}.`,
+        message: `Design v${version} is ready to review on order #${formatOrderNumber(order.orderNumber)}.`,
       });
     }
   } else {
@@ -182,7 +183,7 @@ export async function requestRevision(orderId: string, note: string): Promise<De
   await notify({
     orderId,
     recipientRole: "DESIGNER",
-    message: `Revision requested on order ${orderId.slice(0, 8)}: “${text}”`,
+    message: `Revision requested on order #${formatOrderNumber(order.orderNumber)}: “${text}”`,
   });
 
   revalidatePath(`/orders/${orderId}`);
@@ -210,7 +211,9 @@ export async function postDesignComment(
   const locked = await assertNotLocked(orderId);
   if (locked) return locked;
 
-  const short = orderId.slice(0, 8);
+  const order = await prisma.order.findUnique({ where: { id: orderId } });
+  if (!order) return { error: "Order not found." };
+  const ref = `#${formatOrderNumber(order.orderNumber)}`;
   const preview = text.length > 60 ? `${text.slice(0, 60)}…` : text;
 
   await prisma.designComment.create({
@@ -231,19 +234,16 @@ export async function postDesignComment(
   // Notify the other side of the conversation: a designer's comment pings the client (this
   // order's manager); anyone else's pings the design studio.
   if (session.role === "DESIGNER") {
-    const order = await prisma.order.findUnique({ where: { id: orderId } });
-    if (order) {
-      await notify({
-        orderId,
-        recipientUserId: order.createdById,
-        message: `New comment from the designer on order ${short}: “${preview}”`,
-      });
-    }
+    await notify({
+      orderId,
+      recipientUserId: order.createdById,
+      message: `New comment from the designer on order ${ref}: “${preview}”`,
+    });
   } else {
     await notify({
       orderId,
       recipientRole: "DESIGNER",
-      message: `New comment from the client on order ${short}: “${preview}”`,
+      message: `New comment from the client on order ${ref}: “${preview}”`,
     });
   }
 

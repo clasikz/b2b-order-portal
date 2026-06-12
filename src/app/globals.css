@@ -32,3 +32,11 @@ summary,
 [role="button"]:not([aria-disabled="true"]) {
   cursor: pointer;
 }
+
+/* Links never underline; they get a smooth colour/opacity hover instead. */
+a {
+  text-decoration: none;
+  transition:
+    color 0.18s ease,
+    opacity 0.18s ease;
+}

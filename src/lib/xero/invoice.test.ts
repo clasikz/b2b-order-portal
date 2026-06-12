@@ -4,7 +4,7 @@ import { buildXeroInvoice } from "./invoice";
 describe("buildXeroInvoice", () => {
   it("applies the discount tier, GST, and deposit", () => {
     const inv = buildXeroInvoice({
-      orderId: "abcd1234",
+      orderNumber: 42,
       accountCode: "ACC-1001",
       accountName: "Northside FC",
       discountPct: 15, // Gold
@@ -23,7 +23,7 @@ describe("buildXeroInvoice", () => {
 
   it("charges a 50% deposit when the account requires one", () => {
     const inv = buildXeroInvoice({
-      orderId: "abcd1234",
+      orderNumber: 42,
       accountCode: "ACC-1003",
       accountName: "South Coast",
       discountPct: 5, // Bronze

@@ -4,6 +4,7 @@
 // described in the architecture write-up, not run live.
 
 import type { Club, Order, OrderStatus, RosterEntry } from "@prisma/client";
+import { formatOrderNumber } from "@/lib/order-status";
 
 // Our 3-state machine mapped onto legacy ERP order statuses (see order_statuses.json /
 // mock_erp_payload_example.json in the assessment data).
@@ -53,7 +54,7 @@ export function buildErpPayload(order: OrderForErp): ErpPayload {
   }));
 
   return {
-    external_order_ref: `B2B-${order.id.slice(0, 8).toUpperCase()}`,
+    external_order_ref: formatOrderNumber(order.orderNumber),
     account_code: order.club.id,
     status: toErpStatus(order.status),
     lines,

@@ -62,7 +62,7 @@ export function AuditTimeline({ events }: { events: AuditEvent[] }) {
         <button
           type="button"
           onClick={() => setShowAll(true)}
-          className="self-start text-xs font-medium text-primary-600 hover:underline"
+          className="self-start text-xs font-medium text-primary-600 transition hover:opacity-70"
         >
           Show {hidden} older event{hidden === 1 ? "" : "s"}
         </button>

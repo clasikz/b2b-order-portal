@@ -62,6 +62,7 @@ export default async function Dashboard() {
                 <OrderRow
                   key={order.id}
                   id={order.id}
+                  orderNumber={order.orderNumber}
                   clubName={order.club.name}
                   players={order._count.rosterEntries}
                   totalQty={order.totalQty}

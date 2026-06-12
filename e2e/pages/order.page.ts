@@ -30,9 +30,32 @@ export class OrderPage extends BasePage {
     return this.page.locator('input[type="file"]');
   }
 
+  get requestRevisionButton(): Locator {
+    return this.page.getByRole("button", { name: "Request Revision" });
+  }
+
+  get markPackedButton(): Locator {
+    return this.page.getByRole("button", { name: "Mark as packed & invoice" });
+  }
+
   async goto(orderPath: string) {
     await this.page.goto(orderPath);
     await this.expectLoaded();
+  }
+
+  // Client requests a revision (two-step: button -> note -> send).
+  async requestRevision(note: string) {
+    await this.requestRevisionButton.click();
+    await this.page.getByPlaceholder("Describe the changes for the designer…").fill(note);
+    await this.page.getByRole("button", { name: "Send revision request" }).click();
+    // The "Revision requested" badge (also appears as an activity-log entry, so scope to first).
+    await expect(this.page.getByText("Revision requested").first()).toBeVisible();
+  }
+
+  // Warehouse marks a locked order packed (which generates the mock invoice).
+  async markPacked() {
+    await this.markPackedButton.click();
+    await expect(this.status("Packed")).toBeVisible();
   }
 
   async submitForApproval() {

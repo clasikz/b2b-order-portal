@@ -8,6 +8,7 @@ import { validateRoster } from "@/lib/roster/validation";
 import { toEntryData } from "@/lib/roster/persist";
 import { loadCatalog } from "@/lib/catalog";
 import { notify } from "@/lib/notifications";
+import { formatOrderNumber } from "@/lib/order-status";
 import type { RosterRow } from "@/lib/roster/types";
 
 export type ActionResult = { error: string } | { ok: true };
@@ -48,7 +49,7 @@ export async function submitForApproval(orderId: string): Promise<ActionResult> 
   await notify({
     orderId,
     recipientRole: "DESIGNER",
-    message: `New order ${orderId.slice(0, 8)} submitted — awaiting design.`,
+    message: `New order #${formatOrderNumber(order.orderNumber)} submitted — awaiting design.`,
   });
 
   revalidatePath(`/orders/${orderId}`);
@@ -111,16 +112,16 @@ export async function markPacked(orderId: string): Promise<ActionResult> {
   });
 
   // Close the loop: tell the client (and the studio) the order is packed and invoiced.
-  const short = orderId.slice(0, 8);
+  const ref = `#${formatOrderNumber(order.orderNumber)}`;
   await notify({
     orderId,
     recipientUserId: order.createdById,
-    message: `Order ${short} has been packed and invoiced.`,
+    message: `Order ${ref} has been packed and invoiced.`,
   });
   await notify({
     orderId,
     recipientRole: "DESIGNER",
-    message: `Order ${short} has been packed and invoiced.`,
+    message: `Order ${ref} has been packed and invoiced.`,
   });
 
   revalidatePath(`/orders/${orderId}`);

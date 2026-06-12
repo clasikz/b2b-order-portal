@@ -11,6 +11,7 @@ describe("ERP adapter mapping", () => {
   it("builds an ERP payload from an order + roster", () => {
     const order = {
       id: "abcd1234efgh",
+      orderNumber: 42,
       status: "LOCKED_READY",
       club: { id: "club_taguig" },
       rosterEntries: [
@@ -21,7 +22,7 @@ describe("ERP adapter mapping", () => {
 
     const payload = buildErpPayload(order);
 
-    expect(payload.external_order_ref).toBe("B2B-ABCD1234");
+    expect(payload.external_order_ref).toBe("B2B00000042");
     expect(payload.account_code).toBe("club_taguig");
     expect(payload.status).toBe("ERP Sync Pending");
     expect(payload.lines).toHaveLength(2);

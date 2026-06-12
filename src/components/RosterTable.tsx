@@ -57,7 +57,7 @@ export function RosterTable({ entries }: { entries: Entry[] }) {
         <button
           type="button"
           onClick={() => setShowAll((v) => !v)}
-          className="self-start text-xs font-medium text-primary-600 hover:underline"
+          className="self-start text-xs font-medium text-primary-600 transition hover:opacity-70"
         >
           {showAll ? "Show fewer" : `Show all ${entries.length} rows`}
         </button>

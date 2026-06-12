@@ -5,6 +5,7 @@ import { getSession } from "@/lib/auth";
 import { can } from "@/lib/rbac";
 import { prisma } from "@/lib/prisma";
 import { isErpInMaintenance } from "@/lib/settings";
+import { formatOrderNumber } from "@/lib/order-status";
 import { AppShell } from "@/components/AppShell";
 import { IntegrationControls } from "./IntegrationControls";
 
@@ -78,9 +79,9 @@ export default async function IntegrationPage() {
                       <td className="px-5 py-3.5">
                         <Link
                           href={`/orders/${job.orderId}`}
-                          className="font-semibold text-primary-600 hover:underline"
+                          className="font-semibold text-primary-600 transition hover:opacity-70"
                         >
-                          {job.orderId.slice(0, 8)}
+                          {`#${formatOrderNumber(job.order.orderNumber)}`}
                         </Link>
                       </td>
                       <td className="px-5 py-3.5 text-ink">{job.order.club.name}</td>
