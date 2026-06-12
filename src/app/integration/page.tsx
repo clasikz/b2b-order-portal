@@ -8,6 +8,8 @@ import { isErpInMaintenance } from "@/lib/settings";
 import { formatOrderNumber } from "@/lib/order-status";
 import { AppShell } from "@/components/AppShell";
 import { IntegrationControls } from "./IntegrationControls";
+import { RequeueButton } from "./RequeueButton";
+import { RequeueAllButton } from "./RequeueAllButton";
 
 const JOB_BADGE: Record<IntegrationStatus, string> = {
   PENDING: "bg-amber-50 text-amber-700 ring-1 ring-amber-200/70",
@@ -37,6 +39,10 @@ export default async function IntegrationPage() {
     }),
   ]);
 
+  // Dead-lettered jobs get their own table with a Requeue action; the rest stay in the live queue.
+  const failedJobs = jobs.filter((job) => job.status === "FAILED");
+  const activeJobs = jobs.filter((job) => job.status !== "FAILED");
+
   return (
     <AppShell title="Integration" user={session}>
       <div className="mx-auto flex max-w-4xl flex-col gap-5">
@@ -51,14 +57,14 @@ export default async function IntegrationPage() {
           maintenance={maintenance}
           canConfigure={can(session.role, "settings:manage")}
         />
-
+        
         <section className="rounded-2xl border border-line bg-surface shadow-sm">
           <div className="border-b border-line px-5 py-3.5">
-            <h2 className="text-sm font-semibold text-ink">Queue ({jobs.length})</h2>
+            <h2 className="text-sm font-semibold text-ink">Queue ({activeJobs.length})</h2>
           </div>
-          {jobs.length === 0 ? (
+          {activeJobs.length === 0 ? (
             <p className="px-5 py-8 text-center text-sm text-muted">
-              No jobs yet. Approve &amp; lock an order to enqueue an ERP sync.
+              No jobs in the queue. Approve &amp; lock an order to enqueue an ERP sync.
             </p>
           ) : (
             <div className="overflow-x-auto">
@@ -74,7 +80,7 @@ export default async function IntegrationPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {jobs.map((job) => (
+                  {activeJobs.map((job) => (
                     <tr key={job.id} className="border-b border-line/70 last:border-0">
                       <td className="px-5 py-3.5">
                         <Link
@@ -97,6 +103,58 @@ export default async function IntegrationPage() {
                         {job.attempts}/{job.maxAttempts}
                       </td>
                       <td className="px-5 py-3.5 text-xs text-muted">{job.lastError ?? "—"}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </section>
+        <section className="rounded-2xl border border-line bg-surface shadow-sm">
+          <div className="flex flex-wrap items-center justify-between gap-3 border-b border-line px-5 py-3.5">
+            <h2 className="text-sm font-semibold text-red-600">
+              Failed jobs ({failedJobs.length})
+            </h2>
+            {failedJobs.length > 0 && <RequeueAllButton count={failedJobs.length} />}
+          </div>
+          {failedJobs.length === 0 ? (
+            <p className="px-5 py-8 text-center text-sm text-muted">
+              No failed jobs. Jobs that exhaust their retries (e.g. while the ERP is in
+              maintenance) are dead-lettered here so you can requeue them.
+            </p>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full border-collapse text-sm">
+                <thead>
+                  <tr className="border-b border-line text-left text-xs font-semibold uppercase tracking-wide text-muted">
+                    <th className="px-5 py-3">Order</th>
+                    <th className="px-5 py-3">Club</th>
+                    <th className="px-5 py-3">Target</th>
+                    <th className="px-5 py-3">Attempts</th>
+                    <th className="px-5 py-3">Last error</th>
+                    <th className="px-5 py-3">Action</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {failedJobs.map((job) => (
+                    <tr key={job.id} className="border-b border-line/70 last:border-0">
+                      <td className="px-5 py-3.5">
+                        <Link
+                          href={`/orders/${job.orderId}`}
+                          className="font-semibold text-primary-600 transition hover:opacity-70"
+                        >
+                          {`#${formatOrderNumber(job.order.orderNumber)}`}
+                        </Link>
+                      </td>
+                      <td className="px-5 py-3.5 text-ink">{job.order.club.name}</td>
+                      <td className="px-5 py-3.5 text-muted">{job.target}</td>
+                      <td className="px-5 py-3.5 text-muted">
+                        {job.attempts}/{job.maxAttempts}
+                      </td>
+                      <td className="px-5 py-3.5 text-xs text-red-600">{job.lastError ?? "—"}</td>
+                      <td className="px-5 py-3.5">
+                        <RequeueButton jobId={job.id} />
+                      </td>
                     </tr>
                   ))}
                 </tbody>

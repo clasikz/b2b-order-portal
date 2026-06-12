@@ -103,14 +103,19 @@ dropdown's hover-to-read, or visual checks).
 - **QA-16** Quote/invoice totals change with the account's discount tier (Gold vs Bronze). **[E2E TC-16]**
 - **QA-17** Integration console (**Super Admin only**; Warehouse no longer has it): toggle ERP
   maintenance in Settings → Process queue → job retries (PENDING, attempts climb); bring ERP
-  online → Process → DONE; idempotent (no duplicate jobs).
+  online → Process → DONE; idempotent (no duplicate jobs). Jobs process **FIFO** (oldest first).
+- **QA-22b** Dead-letter recovery: leave ERP in maintenance and Process until a job hits 5/5 →
+  it moves to the **Failed jobs** table and the **Super Admin gets a notification**. Bring ERP
+  online → **Requeue** (one) or **Requeue all** → job(s) return to the queue as PENDING with
+  attempts reset (Requeue does **not** auto-process) → Process queue → DONE.
 - **QA-18** Mark packed → status Packed, mock Xero invoice event in the audit log, invoice marked Issued. **[E2E TC-15]**
 - **QA-19** Warehouse pick list groups rows by pack group.
 - **QA-20** Unauthenticated page access → redirect to login. **[E2E TC-01]**
 - **QA-21** Notifications: submit → Designer notified; proof/comment → Client; revision →
-  Designer; lock → Warehouse + Designer; packed → Client + Designer. Bell badge shows the real
-  unread count on load; hovering an item (briefly lingering) marks just that one read.
-  (Submit → Designer is **[E2E TC-09]**; the rest are a manual pass.)
+  Designer; lock → Warehouse + Designer; packed → Client + Designer; **ERP job dead-lettered →
+  Super Admin**. Bell badge shows the real unread count on load; hovering an item (briefly
+  lingering) marks just that one read. (Submit → Designer is **[E2E TC-09]**; the rest are a
+  manual pass.)
 - **QA-23** Activity timeline is complete: order created, roster validated, reference/proof
   uploaded (proof shows `vN` + note), comments added, revision requested, design locked, packed,
   invoice generated — each with actor + timestamp.

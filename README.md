@@ -52,8 +52,8 @@ design, and the locked state maps to the legacy ERP "ERP Sync Pending" status. S
 |------|-----|
 | **Club Manager** (client) | upload/edit/submit rosters, comment, approve & lock, view own club's orders |
 | **Designer** | upload design proofs, comment, view submitted orders (not drafts) |
-| **Warehouse** | view production-ready orders, pick/pack, operate the ERP sync queue |
-| **Super Admin** | see everything; manage ERP-maintenance + AI-assist settings |
+| **Warehouse** | view production-ready orders, pick/pack |
+| **Super Admin** | see everything; operate the ERP sync queue (process, requeue dead-lettered jobs); manage ERP-maintenance + AI-assist settings |
 
 ## Quick start
 

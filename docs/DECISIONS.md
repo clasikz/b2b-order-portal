@@ -31,9 +31,13 @@ can't match**, and **only when an admin enables it**. Any error/timeout falls ba
 auto-detect, so uploads never depend on the LLM. Efficient and safe.
 
 ### Durable queue over a naive ERP call
-Locking enqueues an **idempotent** job; a worker delivers it with retry/backoff and a
-circuit-breaker (the maintenance toggle). The order is never lost if the ERP is down and never
-duplicated on retry — the resilience story the brief asks for, made real.
+Locking enqueues an **idempotent** job; a worker delivers it FIFO (oldest-first) with
+retry/backoff and a circuit-breaker (the maintenance toggle). The order is never lost if the ERP
+is down and never duplicated on retry — the resilience story the brief asks for, made real. A
+job that exhausts its retries is **dead-lettered (FAILED)** rather than retried forever, and the
+**Super Admin is notified** to recover it: the Integration console has a Failed-jobs table with
+**Requeue** / **Requeue all** (resets to PENDING; the admin reprocesses once the ERP is back).
+This mirrors a DLQ + manual redrive — the idempotency key keeps redrive safe.
 
 ### Design proofs are versioned with confirm-before-save
 Designers preview + explicitly confirm an upload (with an optional note posted to the thread),

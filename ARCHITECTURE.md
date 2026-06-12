@@ -129,12 +129,25 @@ Solid = built; dotted = described/stubbed extension points.
 ```mermaid
 flowchart LR
   L["Order locked"] --> Q["Enqueue IntegrationJob<br/>(idempotency key)"]
-  Q --> W{"Worker attempt"}
+  Q --> W{"Worker attempt<br/>(FIFO: oldest first)"}
   W -->|"ERP online"| D["DONE → ERP Synced"]
   W -->|"ERP in maintenance"| R["retry w/ backoff"]
   R --> W
-  W -->|"max attempts"| F["FAILED (dead-letter)"]
+  W -->|"max attempts (5)"| F["FAILED (dead-letter)<br/>→ notify Super Admin"]
+  F -->|"Requeue (one / all)"| Q
 ```
 
 A maintenance toggle simulates ERP downtime (acts as a circuit breaker — fail fast). Jobs
 wait safely and retry; the idempotency key prevents duplicate ERP orders.
+
+**Processing order.** The worker drains **PENDING jobs oldest-first (FIFO)** so syncs are fair
+and nothing starves. Jobs are independent and idempotent, so in production this is the point
+you'd parallelise with a bounded worker pool (`FOR UPDATE SKIP LOCKED`) — concurrency capped to
+protect the legacy ERP rather than ordering.
+
+**Dead-letter recovery.** After `maxAttempts` (5) a job is dead-lettered to **FAILED** and the
+**Super Admin is notified**. From the Integration console they review the dead-letter table and
+**Requeue** a single job or **Requeue all** (the usual case — a maintenance window fails many
+jobs together). Requeue resets the job to PENDING with a clean attempt count but does **not**
+auto-process; the admin runs the queue once the ERP is confirmed back online. The idempotency
+key makes requeue-and-reprocess safe (no duplicate ERP order).

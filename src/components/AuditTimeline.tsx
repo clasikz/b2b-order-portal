@@ -18,6 +18,7 @@ const EVENT_LABEL: Record<AuditEventType, string> = {
   ERP_ENQUEUED: "ERP sync queued",
   ERP_SYNCED: "ERP synced",
   ERP_FAILED: "ERP sync failed",
+  ERP_REQUEUED: "ERP sync requeued",
   ORDER_PACKED: "Order packed",
   INVOICE_GENERATED: "Xero invoice generated",
 };
