@@ -19,13 +19,16 @@ test.describe("Auth & RBAC", () => {
     await expect(app.navLink("Upload roster")).toHaveCount(0);
   });
 
-  test("TC-04: Warehouse sees the Integration console", async ({ login, app }) => {
+  test("TC-04: Warehouse has no Integration or Settings nav", async ({ login, app }) => {
     await login(USERS.warehouse);
-    await expect(app.navLink("Integration")).toBeVisible();
+    await expect(app.pageHeading("Dashboard")).toBeVisible();
+    await expect(app.navLink("Integration")).toHaveCount(0);
+    await expect(app.navLink("Settings")).toHaveCount(0);
   });
 
-  test("TC-05: Super Admin sees Settings", async ({ login, app }) => {
+  test("TC-05: Super Admin sees Integration and Settings", async ({ login, app }) => {
     await login(USERS.admin);
+    await expect(app.navLink("Integration")).toBeVisible();
     await expect(app.navLink("Settings")).toBeVisible();
   });
 });

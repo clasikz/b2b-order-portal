@@ -20,10 +20,17 @@ describe("RBAC permission matrix", () => {
     expect(can("DESIGNER", "roster:upload")).toBe(false);
   });
 
-  it("Warehouse can view and manage integration only", () => {
+  it("Warehouse views production orders and packs them, but cannot manage integration", () => {
     expect(can("WAREHOUSE", "order:view")).toBe(true);
-    expect(can("WAREHOUSE", "integration:manage")).toBe(true);
+    expect(can("WAREHOUSE", "order:pack")).toBe(true);
+    expect(can("WAREHOUSE", "integration:manage")).toBe(false);
     expect(can("WAREHOUSE", "design:lock")).toBe(false);
     expect(can("WAREHOUSE", "roster:upload")).toBe(false);
+  });
+
+  it("Super Admin owns integration and settings", () => {
+    expect(can("SUPER_ADMIN", "integration:manage")).toBe(true);
+    expect(can("SUPER_ADMIN", "settings:manage")).toBe(true);
+    expect(can("SUPER_ADMIN", "order:view")).toBe(true);
   });
 });

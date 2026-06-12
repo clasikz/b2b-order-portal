@@ -4,9 +4,10 @@ import { SESSION_COOKIE } from "@/lib/session";
 
 // Lightweight gate: presence check only. Role/permission checks happen server-side
 // in server components, actions, and route handlers (see lib/auth.ts).
+// (Next.js 16 renamed the "middleware" convention to "proxy".)
 const PUBLIC_PATHS = ["/login"];
 
-export function middleware(req: NextRequest) {
+export function proxy(req: NextRequest) {
   const { pathname } = req.nextUrl;
 
   if (PUBLIC_PATHS.some((p) => pathname.startsWith(p)) || pathname.startsWith("/api/auth")) {

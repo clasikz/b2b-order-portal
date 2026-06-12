@@ -22,8 +22,7 @@ export default async function IntegrationPage() {
     return (
       <AppShell title="Integration" user={session}>
         <p className="rounded-2xl border border-line bg-surface p-6 text-sm text-muted">
-          Only Warehouse and Super Admin can operate integrations. You are signed in as{" "}
-          {session.role}.
+          Only a Super Admin can operate integrations. You are signed in as {session.role}.
         </p>
       </AppShell>
     );

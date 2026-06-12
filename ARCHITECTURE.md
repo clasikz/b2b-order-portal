@@ -9,8 +9,8 @@ A single Next.js app (one repo, one deploy) layered **by domain** rather than by
 real PostgreSQL database. External systems sit behind adapters so the core never depends on
 their protocols.
 
-- **Auth + RBAC** (`lib/auth`, `lib/rbac`, `middleware`) — cookie-backed mock session against
-  a real `users` table; a pure `can(role, action)` matrix; middleware gates pages, API routes
+- **Auth + RBAC** (`lib/auth`, `lib/rbac`, `proxy`) — cookie-backed mock session against
+  a real `users` table; a pure `can(role, action)` matrix; the proxy gates pages, API routes
   self-guard and return JSON `401/403`.
 - **Roster** (`lib/roster/*`) — a pluggable `RosterNormalizer` (clean-CSV built; pivoted/AI
   variants described), deterministic column auto-detect, optional Groq AI gap-fill, and a

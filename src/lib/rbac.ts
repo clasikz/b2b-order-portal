@@ -27,9 +27,9 @@ const PERMISSIONS: Record<Role, Action[]> = {
   ],
   // Designer: produces the artwork and responds to feedback.
   DESIGNER: ["order:view", "design:proof", "design:comment"],
-  // Warehouse / internal ops: views production-ready orders, picks & packs, operates ERP.
-  WAREHOUSE: ["order:view", "integration:manage", "order:pack"],
-  // Super admin: sees everything and owns system settings.
+  // Warehouse: views production-ready orders and picks & packs them.
+  WAREHOUSE: ["order:view", "order:pack"],
+  // Super admin: sees everything, owns system settings, and operates the ERP integration.
   SUPER_ADMIN: ["order:view", "integration:manage", "order:pack", "settings:manage"],
 };
 

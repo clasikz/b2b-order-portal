@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useTopLoader } from "nextjs-toploader";
 import { markNotificationRead } from "@/app/notifications-actions";
 
-const HOVER_DELAY_MS = 700;
+const HOVER_DELAY_MS = 300;
 
 export type NotificationItem = {
   id: string;
